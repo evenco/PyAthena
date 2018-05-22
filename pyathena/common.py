@@ -207,6 +207,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             raise_from(OperationalError(*e.args), e)
 
     def cancel_all(self):
+        print(f"Cancelling {self._query_ids}")
         for query_id in self._query_ids:
             self._cancel(query_id)
 
