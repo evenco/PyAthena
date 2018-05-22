@@ -121,17 +121,16 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
 
     def _poll(self, query_id):
         print("poll")
-        try:
-            while True:
-                query_execution = self._query_execution(query_id)
-                if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
-                                            AthenaQueryExecution.STATE_FAILED,
-                                            AthenaQueryExecution.STATE_CANCELLED]:
-                    self._query_ids -= {query_id}
-                    return query_execution
-                else:
-                    time.sleep(self._poll_interval)
-                
+    
+        while True:
+            query_execution = self._query_execution(query_id)
+            if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
+                                        AthenaQueryExecution.STATE_FAILED,
+                                        AthenaQueryExecution.STATE_CANCELLED]:
+                self._query_ids -= {query_id}
+                return query_execution
+            else:
+                time.sleep(self._poll_interval)
 
     def _build_start_query_execution_request(self, query):
         request = {
