@@ -117,6 +117,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             return AthenaQueryExecution(response)
 
     def _poll(self, query_id):
+        _logger.info("Base poll")
         while True:
             query_execution = self._query_execution(query_id)
             if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
@@ -150,6 +151,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         return request
 
     def _execute(self, operation, parameters=None):
+        _logger.info("Base Executing")
         query = self._formatter.format(operation, parameters)
         _logger.debug(query)
 
@@ -182,6 +184,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         raise NotImplementedError  # pragma: no cover
 
     def _cancel(self, query_id):
+        _logger.info("Base canceling")
         request = {'QueryExecutionId': query_id}
         try:
             retry_api_call(self._connection.stop_query_execution,
@@ -205,7 +208,9 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         pass
 
     def __enter__(self):
+        _logger.info("Base Entering")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        _logger.info("Base Exiting")
         self.close()

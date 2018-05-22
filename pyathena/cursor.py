@@ -94,6 +94,7 @@ class Cursor(BaseCursor, CursorIterator):
 
     @synchronized
     def close(self):
+        _logger.info("Closing")
         if self._result_set and not self._result_set.is_closed:
             self._result_set.close()
         if self._query_id:
@@ -124,6 +125,7 @@ class Cursor(BaseCursor, CursorIterator):
 
     @synchronized
     def cancel(self):
+        _logger.info("Canceling")
         if not self._query_id:
             raise ProgrammingError('QueryExecutionId is none or empty.')
         self._cancel(self._query_id)
