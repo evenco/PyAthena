@@ -95,6 +95,8 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         self.retry_max_delay = retry_max_delay
         self.retry_exponential_base = retry_exponential_base
 
+        self._query_ids = set()
+
     @property
     def connection(self):
         return self._connection
@@ -114,18 +116,23 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             _logger.exception('Failed to get query execution.')
             raise_from(OperationalError(*e.args), e)
         else:
+            self._query_ids.add(query_id)
             return AthenaQueryExecution(response)
 
     def _poll(self, query_id):
         print("Base poll")
-        while True:
-            query_execution = self._query_execution(query_id)
-            if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
-                                         AthenaQueryExecution.STATE_FAILED,
-                                         AthenaQueryExecution.STATE_CANCELLED]:
-                return query_execution
-            else:
-                time.sleep(self._poll_interval)
+        try:
+            while True:
+                query_execution = self._query_execution(query_id)
+                if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
+                                            AthenaQueryExecution.STATE_FAILED,
+                                            AthenaQueryExecution.STATE_CANCELLED]:
+                    return query_execution
+                else:
+                    time.sleep(self._poll_interval)
+        finally:
+            self._query_ids -= {query_id}
+                
 
     def _build_start_query_execution_request(self, query):
         request = {
@@ -184,7 +191,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         raise NotImplementedError  # pragma: no cover
 
     def _cancel(self, query_id):
-        print("Base canceling")
+        print("Base canceling", query_id)
         request = {'QueryExecutionId': query_id}
         try:
             retry_api_call(self._connection.stop_query_execution,
@@ -198,6 +205,10 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         except Exception as e:
             _logger.exception('Failed to cancel query.')
             raise_from(OperationalError(*e.args), e)
+
+    def cancel_all(self):
+        for query_id in self._query_ids:
+            self._cancel(query_id)
 
     def setinputsizes(self, sizes):
         """Does nothing by default"""
@@ -213,4 +224,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Base Exiting")
-        self.close()
+        try:
+            self.cancel_all()
+        finally:
+            self.close()
