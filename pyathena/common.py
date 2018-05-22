@@ -117,8 +117,6 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             _logger.exception('Failed to get query execution.')
             raise_from(OperationalError(*e.args), e)
         else:
-            print(f"Adding query ID {query_id}")
-            self._query_ids.add(query_id)
             return AthenaQueryExecution(response)
 
     def _poll(self, query_id):
@@ -129,11 +127,10 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
                 if query_execution.state in [AthenaQueryExecution.STATE_SUCCEEDED,
                                             AthenaQueryExecution.STATE_FAILED,
                                             AthenaQueryExecution.STATE_CANCELLED]:
+                    self._query_ids -= {query_id}
                     return query_execution
                 else:
                     time.sleep(self._poll_interval)
-        finally:
-            self._query_ids -= {query_id}
                 
 
     def _build_start_query_execution_request(self, query):
@@ -178,7 +175,10 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             _logger.exception('Failed to execute query.')
             raise_from(DatabaseError(*e.args), e)
         else:
-            return response.get('QueryExecutionId', None)
+            query_id = response.get('QueryExecutionId', None)
+            print(f"Adding query ID {query_id}")
+            self._query_ids.add(query_id)
+            return query_id
 
     @abstractmethod
     def execute(self, operation, parameters=None):
