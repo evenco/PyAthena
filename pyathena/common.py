@@ -88,12 +88,12 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         self.retry_attempt = retry_attempt
         self.retry_multiplier = retry_multiplier
         self.retry_max_delay = retry_max_delay
-        self.retry_exponential_base = retry_exponential_base
+        self.retry_exponential_= retry_exponential_base
 
         self.retry_attempt = retry_attempt
         self.retry_multiplier = retry_multiplier
         self.retry_max_delay = retry_max_delay
-        self.retry_exponential_base = retry_exponential_base
+        self.retry_exponential_= retry_exponential_base
 
         self._query_ids = set()
 
@@ -104,6 +104,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
     def _query_execution(self, query_id):
         request = {'QueryExecutionId': query_id}
         try:
+            print(f"Executing {query_id}")
             response = retry_api_call(self._connection.get_query_execution,
                                       exceptions=self.retry_exceptions,
                                       attempt=self.retry_attempt,
@@ -116,11 +117,12 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
             _logger.exception('Failed to get query execution.')
             raise_from(OperationalError(*e.args), e)
         else:
+            print(f"Adding query ID {query_id}")
             self._query_ids.add(query_id)
             return AthenaQueryExecution(response)
 
     def _poll(self, query_id):
-        print("Base poll")
+        print("poll")
         try:
             while True:
                 query_execution = self._query_execution(query_id)
@@ -158,7 +160,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         return request
 
     def _execute(self, operation, parameters=None):
-        print("Base Executing")
+        print("Executing")
         query = self._formatter.format(operation, parameters)
         _logger.debug(query)
 
@@ -191,7 +193,7 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         raise NotImplementedError  # pragma: no cover
 
     def _cancel(self, query_id):
-        print("Base canceling", query_id)
+        print("canceling", query_id)
         request = {'QueryExecutionId': query_id}
         try:
             retry_api_call(self._connection.stop_query_execution,
@@ -220,11 +222,11 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         pass
 
     def __enter__(self):
-        print("Base Entering")
+        print("Entering")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print("Base Exiting")
+        print("Exiting")
         try:
             self.cancel_all()
         finally:
