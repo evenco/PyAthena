@@ -88,12 +88,12 @@ class BaseCursor(with_metaclass(ABCMeta, object)):
         self.retry_attempt = retry_attempt
         self.retry_multiplier = retry_multiplier
         self.retry_max_delay = retry_max_delay
-        self.retry_exponential_= retry_exponential_base
+        self.retry_exponential_base = retry_exponential_base
 
         self.retry_attempt = retry_attempt
         self.retry_multiplier = retry_multiplier
         self.retry_max_delay = retry_max_delay
-        self.retry_exponential_= retry_exponential_base
+        self.retry_exponential_base = retry_exponential_base
 
         self._query_ids = set()
 
